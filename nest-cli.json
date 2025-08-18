@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "apps/renova/src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "webpack": true,
+    "tsConfigPath": "apps/renova/tsconfig.app.json"
+  },
+  "monorepo": true,
+  "root": "apps/renova",
+  "projects": {
+    "inventario": {
+      "type": "application",
+      "root": "apps/inventario",
+      "entryFile": "main",
+      "sourceRoot": "apps/inventario/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/inventario/tsconfig.app.json"
+      }
+    },
+    "iot": {
+      "type": "application",
+      "root": "apps/iot",
+      "entryFile": "main",
+      "sourceRoot": "apps/iot/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/iot/tsconfig.app.json"
+      }
+    },
+    "obra": {
+      "type": "application",
+      "root": "apps/obra",
+      "entryFile": "main",
+      "sourceRoot": "apps/obra/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/obra/tsconfig.app.json"
+      }
+    },
+    "renova": {
+      "type": "application",
+      "root": "apps/renova",
+      "entryFile": "main",
+      "sourceRoot": "apps/renova/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/renova/tsconfig.app.json"
+      }
+    }
+  }
+}
