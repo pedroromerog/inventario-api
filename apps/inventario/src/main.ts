@@ -2,9 +2,13 @@ import { NestFactory } from '@nestjs/core'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { ValidationPipe } from '@nestjs/common'
 import { InventarioModule } from './inventario.module'
+import cookieParser from 'cookie-parser'
 
 async function bootstrap() {
   const app = await NestFactory.create(InventarioModule)
+
+  // Configurar cookie parser
+  app.use(cookieParser())
 
   // Configurar validación global
   app.useGlobalPipes(
@@ -15,10 +19,21 @@ async function bootstrap() {
     }),
   )
 
-  // Configurar CORS
+  // Configurar CORS para cookies
+  const corsOrigins =
+    process.env.NODE_ENV === 'production'
+      ? [process.env.CORS_ORIGIN || 'https://tudominio.com']
+      : [
+          'http://localhost:4200',
+          'http://localhost:4201',
+          'http://localhost:4203',
+        ]
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || '*',
-    credentials: true,
+    origin: corsOrigins,
+    credentials: true, // Importante para cookies
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 
   // Configurar Swagger

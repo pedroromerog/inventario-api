@@ -147,8 +147,8 @@ export class CreateMovimientoDto {
     example: 'uuid-del-usuario',
     required: false,
   })
-  @IsUUID()
   @IsOptional()
+  @IsUUID()
   autorizadorId?: string
 
   @ApiProperty({

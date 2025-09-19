@@ -52,9 +52,11 @@ export class UpdateProveedorAction {
     }
 
     // Actualizar el proveedor
+    console.log('🚀>>> ~ updateProveedorDto:', updateProveedorDto)
+    const { is_active, ...dto } = updateProveedorDto
     const updatedProveedor = await this.proveedoresRepository.updateProveedor(
       id,
-      updateProveedorDto,
+      { ...dto, isActive: is_active },
     )
     if (!updatedProveedor) {
       throw new NotFoundException(

@@ -14,6 +14,8 @@ import { User } from '../users/entities/user.entity'
 import { LoginAction } from './actions/login.action'
 import { RegisterAction } from './actions/register.action'
 import { RefreshTokenAction } from './actions/refresh-token.action'
+import { Response } from 'express'
+import { cookieConfig } from '../../config/cookie.config'
 import * as bcrypt from 'bcrypt'
 
 @Injectable()
@@ -27,9 +29,7 @@ export class AuthService {
   ) {}
 
   async validateUser(username: string, password: string): Promise<any> {
-    console.log('username', username)
     const user = await this.usersService.findByUsername(username)
-    console.log('user', user)
     if (user && (await bcrypt.compare(password, user.password))) {
       const { password, ...result } = user
       return result

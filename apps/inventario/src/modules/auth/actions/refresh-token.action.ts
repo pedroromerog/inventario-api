@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config'
 import { UsersService } from '../../users/users.service'
 import { RefreshTokenDto } from '../dto/refresh-token.dto'
 import { RefreshTokenResponseDto } from '../dto/auth-response.dto'
+import { Response } from 'express'
+import { cookieConfig } from '../../../config/cookie.config'
 
 @Injectable()
 export class RefreshTokenAction {
@@ -45,8 +47,8 @@ export class RefreshTokenAction {
       })
 
       return {
-        accessToken,
-        refreshToken: newRefreshToken,
+        accessToken, // Retornamos el token en el body
+        refreshToken: newRefreshToken, // Retornamos el refresh token en el body
         expiresIn: 60 * 60, // 1 hora
         tokenType: 'Bearer',
       }

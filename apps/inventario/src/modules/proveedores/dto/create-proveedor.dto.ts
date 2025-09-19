@@ -1,15 +1,14 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsEnum,
-  IsOptional,
-  IsEmail,
-  IsUrl,
-  IsNumber,
-  IsBoolean,
-} from 'class-validator'
 import { ApiProperty } from '@nestjs/swagger'
-import { TipoProveedor, EstadoProveedor } from '../enums/proveedor.enums'
+import {
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUrl,
+} from 'class-validator'
+import { EstadoProveedor, TipoProveedor } from '../enums/proveedor.enums'
 
 export class CreateProveedorDto {
   @ApiProperty({
@@ -136,6 +135,10 @@ export class CreateProveedorDto {
   @IsOptional()
   contactoPrincipal?: string
 
+  @IsBoolean()
+  @IsOptional()
+  is_active?: boolean
+
   @ApiProperty({
     description: 'Teléfono del contacto principal',
     example: '3001234567',
@@ -150,7 +153,7 @@ export class CreateProveedorDto {
     example: 'juan.perez@empresaabc.com',
     required: false,
   })
-  @IsEmail()
+  // @IsEmail()
   @IsOptional()
   emailContacto?: string
 

@@ -8,6 +8,8 @@ import { ConfigService } from '@nestjs/config'
 import { UsersService } from '../../users/users.service'
 import { LoginDto } from '../dto/login.dto'
 import { AuthResponseDto } from '../dto/auth-response.dto'
+import { Response } from 'express'
+import { cookieConfig } from '../../../config/cookie.config'
 import * as bcrypt from 'bcrypt'
 
 @Injectable()
@@ -33,7 +35,7 @@ export class LoginAction {
     }
 
     // Verificar estado del usuario
-    if (user.estado !== 'activo') {
+    if (user.estado !== ('activo' as any)) {
       throw new BadRequestException('Usuario no está activo')
     }
 
@@ -53,10 +55,10 @@ export class LoginAction {
     await this.usersService.updateLastAccess(user.id)
 
     return {
-      accessToken,
-      refreshToken,
+      accessToken, // Retornamos el token en el body
+      refreshToken, // Retornamos el refresh token en el body
       expiresIn: rememberMe ? 7 * 24 * 60 * 60 : 60 * 60, // 7 días o 1 hora
-      tokenType: 'Bearer',
+      tokenType: 'Bearer', // Cambiamos a Bearer ya que no usamos cookies por ahora
       user: {
         id: user.id,
         username: user.username,
