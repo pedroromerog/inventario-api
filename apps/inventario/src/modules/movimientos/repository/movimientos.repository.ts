@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common'
 import { DataSource, Repository } from 'typeorm'
 import { Movimiento } from '../entities/movimiento.entity'
 import {
-  TipoMovimiento,
   EstadoMovimiento,
   MotivoMovimiento,
+  TipoMovimiento,
 } from '../enums/movimiento.enums'
 
 @Injectable()

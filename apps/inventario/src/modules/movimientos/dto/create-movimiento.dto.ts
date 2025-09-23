@@ -1,17 +1,18 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsEnum,
-  IsOptional,
-  IsNumber,
-  IsDateString,
-  IsUUID,
-} from 'class-validator'
 import { ApiProperty } from '@nestjs/swagger'
 import {
-  TipoMovimiento,
+  IsDateString,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator'
+import {
   EstadoMovimiento,
   MotivoMovimiento,
+  TipoMovimiento,
+  TipoOperacion,
 } from '../enums/movimiento.enums'
 
 export class CreateMovimientoDto {
@@ -40,6 +41,15 @@ export class CreateMovimientoDto {
   @IsEnum(EstadoMovimiento)
   @IsOptional()
   estado?: EstadoMovimiento
+
+  @ApiProperty({
+    description: 'Operación del movimiento',
+    enum: EstadoMovimiento,
+    example: TipoOperacion.ENTRADA,
+  })
+  @IsEnum(TipoOperacion)
+  @IsOptional()
+  operacion?: TipoOperacion
 
   @ApiProperty({
     description: 'Motivo del movimiento',

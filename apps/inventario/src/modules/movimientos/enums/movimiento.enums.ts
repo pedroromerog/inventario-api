@@ -12,6 +12,11 @@ export enum TipoMovimiento {
   OTRO = 'otro',
 }
 
+export enum TipoOperacion {
+  ENTRADA = 'entrada',
+  SALIDA = 'salida',
+}
+
 export enum EstadoMovimiento {
   PENDIENTE = 'pendiente',
   EN_PROCESO = 'en_proceso',

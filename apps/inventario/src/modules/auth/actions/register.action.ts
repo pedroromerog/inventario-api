@@ -1,12 +1,13 @@
 import {
-  Injectable,
-  ConflictException,
   BadRequestException,
+  ConflictException,
+  Injectable,
 } from '@nestjs/common'
+import * as bcrypt from 'bcrypt'
+import { User } from '../../users/entities/user.entity'
+import { EstadoUsuario } from '../../users/enums/user.enums'
 import { UsersService } from '../../users/users.service'
 import { RegisterDto } from '../dto/register.dto'
-import { User } from '../../users/entities/user.entity'
-import * as bcrypt from 'bcrypt'
 
 @Injectable()
 export class RegisterAction {
@@ -43,8 +44,8 @@ export class RegisterAction {
       username,
       email,
       password: hashedPassword,
-      estado: 'pendiente_activacion' as any,
-      rolId: userData.rolId || 3, // 3 es el ID del rol OPERADOR por defecto
+      estado: EstadoUsuario.ACTIVO,
+      rolId: userData.rolId || 2, // 3 es el ID del rol OPERADOR por defecto
     }
 
     return this.usersService.create(createUserDto)

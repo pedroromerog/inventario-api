@@ -1,18 +1,19 @@
 import {
-  Entity,
-  Column,
-  Index,
   BeforeInsert,
   BeforeUpdate,
-  PrimaryGeneratedColumn,
-  ManyToOne,
+  Column,
+  Entity,
+  Index,
   JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm'
 import { User } from '../../users/entities/user.entity'
 import {
-  TipoMovimiento,
   EstadoMovimiento,
   MotivoMovimiento,
+  TipoMovimiento,
+  TipoOperacion,
 } from '../enums/movimiento.enums'
 
 @Entity('movimientos', { schema: 'inventario' })
@@ -32,6 +33,13 @@ export class Movimiento {
     default: TipoMovimiento.TRANSFERENCIA,
   })
   tipo: TipoMovimiento
+
+  @Column({
+    type: 'enum',
+    enum: TipoOperacion,
+    nullable: false,
+  })
+  operacion: TipoOperacion
 
   @Column({
     type: 'enum',
