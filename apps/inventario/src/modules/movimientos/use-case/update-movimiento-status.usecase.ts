@@ -48,6 +48,11 @@ export class UpdateMovimientoStatusAction {
       await this.updateStockFromMovement(movimientoActualizado)
     }
 
+    if (!movimientoActualizado) {
+      throw new NotFoundException(
+        `Error al actualizar el movimiento con ID ${id}`,
+      )
+    }
     return movimientoActualizado
   }
 
