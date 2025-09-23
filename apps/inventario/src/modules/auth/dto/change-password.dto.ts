@@ -10,7 +10,7 @@ export class ChangePasswordDto {
   @ApiProperty({ description: 'Nueva contraseña', example: 'newpassword123' })
   @IsString()
   @IsNotEmpty()
-  @MinLength(8)
+  @MinLength(4)
   newPassword: string
 
   @ApiProperty({

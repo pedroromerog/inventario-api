@@ -171,4 +171,60 @@ export class StockRepository extends Repository<Stock> {
       .addOrderBy('bodega.nombre', 'ASC')
       .getRawMany()
   }
+
+  /**
+   * Inserta o actualiza (upsert) una fila de stock sumando cantidad.
+   * - Si no existe, crea el registro activo
+   * - Si existe (incluido soft-deleted), incrementa stock y reactiva
+   * - Actualiza precioUltimo y calcula precioPromedio ponderado cuando hay precio
+   */
+  async addOrCreateStock(
+    productoId: number,
+    bodegaId: number,
+    cantidad: number,
+    precioUnitario?: number,
+  ): Promise<void> {
+    // Usamos SQL nativo para aprovechar ON CONFLICT y cálculos atómicos
+    const params = [
+      productoId,
+      bodegaId,
+      cantidad,
+      // precioUltimo (puede ser null)
+      precioUnitario ?? null,
+    ]
+
+    // Nota: nombres de columnas deben coincidir con la BD (is_active, deleted_at, etc.)
+    const sql = `
+      INSERT INTO "inventario"."stocks" (
+        "productoId", "bodegaId", "stockActual", "stockReservado",
+        "stockDisponible", "stockMinimo", "stockMaximo",
+        "precioPromedio", "precioUltimo", "fechaUltimoMovimiento",
+        "fechaUltimaActualizacion", "observaciones", "is_active",
+        "created_at", "updated_at", "deleted_at"
+      ) VALUES (
+        $1, $2, $3, 0, $3, 0, 0,
+        /* precioPromedio inicial */ $4::numeric,
+        /* precioUltimo */ $4::numeric,
+        NOW(), NOW(), NULL, TRUE, NOW(), NOW(), NULL
+      )
+      ON CONFLICT ("productoId", "bodegaId") DO UPDATE SET
+        "stockActual" = "inventario"."stocks"."stockActual" + EXCLUDED."stockActual",
+        "stockDisponible" = ("inventario"."stocks"."stockActual" + EXCLUDED."stockActual") - "inventario"."stocks"."stockReservado",
+        "precioUltimo" = COALESCE(EXCLUDED."precioUltimo", "inventario"."stocks"."precioUltimo"),
+        "precioPromedio" = CASE
+          WHEN EXCLUDED."precioUltimo" IS NULL THEN "inventario"."stocks"."precioPromedio"
+          WHEN ("inventario"."stocks"."stockActual" + EXCLUDED."stockActual") > 0 THEN (
+            COALESCE("inventario"."stocks"."precioPromedio", 0) * "inventario"."stocks"."stockActual" + EXCLUDED."stockActual" * COALESCE(EXCLUDED."precioUltimo", 0)
+          ) / NULLIF(("inventario"."stocks"."stockActual" + EXCLUDED."stockActual"), 0)
+          ELSE EXCLUDED."precioUltimo"
+        END,
+        "fechaUltimoMovimiento" = NOW(),
+        "fechaUltimaActualizacion" = NOW(),
+        "is_active" = TRUE,
+        "deleted_at" = NULL,
+        "updated_at" = NOW();
+    `
+
+    await this.manager.query(sql, params)
+  }
 }

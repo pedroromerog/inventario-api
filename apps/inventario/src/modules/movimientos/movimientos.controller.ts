@@ -16,6 +16,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { MovimientosService } from './movimientos.service'
 import { CreateMovimientoDto } from './dto/create-movimiento.dto'
 import { UpdateMovimientoDto } from './dto/update-movimiento.dto'
+import { UpdateMovimientoStatusDto } from './dto/update-movimiento-status.dto'
 
 @Controller('movimientos')
 @UseGuards(JwtAuthGuard)
@@ -126,6 +127,19 @@ export class MovimientosController {
     @Body() updateMovimientoDto: UpdateMovimientoDto,
   ) {
     return this.movimientosService.update(+id, updateMovimientoDto)
+  }
+
+  @Patch(':id/estado')
+  @ApiOperation({ summary: 'Actualizar el estado de un movimiento' })
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() updateStatusDto: UpdateMovimientoStatusDto,
+  ) {
+    return this.movimientosService.updateStatus(
+      +id,
+      updateStatusDto.estado,
+      updateStatusDto.observaciones,
+    )
   }
 
   @Delete(':id')

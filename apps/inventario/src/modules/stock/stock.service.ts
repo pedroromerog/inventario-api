@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { CreateStockAction } from './use-case/create-stock.usecase'
 import { GetStockAction } from './use-case/get-stock.usecase'
 import { UpdateStockAction } from './use-case/update-stock.usecase'
+import { StockOperationsAction } from './use-case/stock-operations.usecase'
 import { DeleteStockAction } from './use-case/delete-stock.usecase'
 import { StockRepository } from './repository/stock.repository'
 import { CreateStockDto } from './dto/create-stock.dto'
@@ -15,6 +16,7 @@ export class StockService {
     private readonly createStockAction: CreateStockAction,
     private readonly getStockAction: GetStockAction,
     private readonly updateStockAction: UpdateStockAction,
+    private readonly stockOperationsAction: StockOperationsAction,
     private readonly deleteStockAction: DeleteStockAction,
     private readonly stockRepository: StockRepository,
   ) {}
@@ -98,5 +100,75 @@ export class StockService {
 
   async hardRemove(id: number): Promise<void> {
     return this.deleteStockAction.hardDelete(id)
+  }
+
+  // Métodos para operaciones de stock
+  async reserveStock(
+    productoId: number,
+    bodegaId: number,
+    cantidad: number,
+  ): Promise<Stock> {
+    return this.stockOperationsAction.reserveStock(
+      productoId,
+      bodegaId,
+      cantidad,
+    )
+  }
+
+  async releaseStock(
+    productoId: number,
+    bodegaId: number,
+    cantidad: number,
+  ): Promise<Stock> {
+    return this.stockOperationsAction.releaseStock(
+      productoId,
+      bodegaId,
+      cantidad,
+    )
+  }
+
+  async consumeReservedStock(
+    productoId: number,
+    bodegaId: number,
+    cantidad: number,
+  ): Promise<Stock> {
+    return this.stockOperationsAction.consumeReservedStock(
+      productoId,
+      bodegaId,
+      cantidad,
+    )
+  }
+
+  async getTotalStockByProduct(productoId: number): Promise<{
+    stockActual: number
+    stockReservado: number
+    stockDisponible: number
+    bodegas: Array<{
+      bodegaId: number
+      bodegaNombre: string
+      stockActual: number
+      stockReservado: number
+      stockDisponible: number
+    }>
+  }> {
+    return this.stockOperationsAction.getTotalStockByProduct(productoId)
+  }
+
+  async checkStockAvailability(
+    productoId: number,
+    bodegaId: number,
+    cantidad: number,
+  ): Promise<{
+    disponible: boolean
+    stockActual: number
+    stockReservado: number
+    stockDisponible: number
+    mensaje: string
+  }> {
+    return this.stockOperationsAction.checkStockAvailability(
+      productoId,
+      bodegaId,
+      cantidad,
+    )
   }
 }

@@ -7,6 +7,7 @@ import { StockRepository } from './repository/stock.repository'
 import { CreateStockAction } from './use-case/create-stock.usecase'
 import { GetStockAction } from './use-case/get-stock.usecase'
 import { UpdateStockAction } from './use-case/update-stock.usecase'
+import { StockOperationsAction } from './use-case/stock-operations.usecase'
 import { DeleteStockAction } from './use-case/delete-stock.usecase'
 
 @Module({
@@ -18,6 +19,7 @@ import { DeleteStockAction } from './use-case/delete-stock.usecase'
     CreateStockAction,
     GetStockAction,
     UpdateStockAction,
+    StockOperationsAction,
     DeleteStockAction,
   ],
   exports: [StockService, StockRepository],

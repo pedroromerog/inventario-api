@@ -1,152 +1,89 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 import {
   Injectable,
-  ConflictException,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common'
 import { MovimientosRepository } from '../repository/movimientos.repository'
 import { StockRepository } from '../../stock/repository/stock.repository'
-import { CreateMovimientoDto } from '../dto/create-movimiento.dto'
 import { Movimiento } from '../entities/movimiento.entity'
-import {
-  TipoMovimiento,
-  TipoOperacion,
-  EstadoMovimiento,
-} from '../enums/movimiento.enums'
+import { EstadoMovimiento, TipoMovimiento } from '../enums/movimiento.enums'
 
 @Injectable()
-export class CreateMovimientoAction {
+export class UpdateMovimientoStatusAction {
   constructor(
     private readonly movimientosRepository: MovimientosRepository,
     private readonly stockRepository: StockRepository,
   ) {}
 
-  async execute(createMovimientoDto: CreateMovimientoDto): Promise<Movimiento> {
-    // Verificar que el código no exista
-    const existingByCodigo = await this.movimientosRepository.findByCodigo(
-      createMovimientoDto.codigo,
-    )
-    if (existingByCodigo) {
-      throw new ConflictException(
-        `Ya existe un movimiento con el código ${createMovimientoDto.codigo}`,
-      )
+  async execute(
+    id: number,
+    nuevoEstado: EstadoMovimiento,
+    observaciones?: string,
+  ): Promise<Movimiento> {
+    // Verificar que el movimiento existe
+    const movimiento = await this.movimientosRepository.findById(id)
+    if (!movimiento) {
+      throw new NotFoundException(`Movimiento con ID ${id} no encontrado`)
     }
 
-    // Definir tipos de movimientos
-    const entradas = [
-      TipoMovimiento.ENTRADA,
-      TipoMovimiento.COMPRA,
-      TipoMovimiento.PRODUCCION,
-      TipoMovimiento.DEVOLUCION,
-    ]
-    const salidas = [
-      TipoMovimiento.SALIDA,
-      TipoMovimiento.VENTA,
-      TipoMovimiento.CONSUMO,
-      TipoMovimiento.MERMA,
-    ]
-    const transferencias = [TipoMovimiento.TRANSFERENCIA]
-    const ajustes = [TipoMovimiento.AJUSTE]
+    // Validar transición de estado
+    this.validateStateTransition(movimiento.estado, nuevoEstado)
 
-    // Determinar la operación basada en el tipo de movimiento
-    if (salidas.includes(createMovimientoDto.tipo as TipoMovimiento)) {
-      createMovimientoDto.operacion = TipoOperacion.SALIDA
-    } else if (entradas.includes(createMovimientoDto.tipo as TipoMovimiento)) {
-      createMovimientoDto.operacion = TipoOperacion.ENTRADA
-    } else if (
-      transferencias.includes(createMovimientoDto.tipo as TipoMovimiento)
+    // Actualizar el movimiento
+    const movimientoActualizado =
+      await this.movimientosRepository.updateMovimiento(id, {
+        estado: nuevoEstado,
+        observaciones: observaciones || movimiento.observaciones,
+      })
+
+    // Solo actualizar el stock si el movimiento cambia de un estado no completado a completado
+    // Esto evita la doble actualización ya que el stock se actualiza al crear el movimiento
+    if (
+      nuevoEstado === EstadoMovimiento.COMPLETADO &&
+      movimiento.estado !== EstadoMovimiento.COMPLETADO &&
+      movimientoActualizado
     ) {
-      // Para transferencias, la operación se determina por la bodega origen/destino
-      createMovimientoDto.operacion = createMovimientoDto.bodegaOrigenId
-        ? TipoOperacion.SALIDA
-        : TipoOperacion.ENTRADA
-    } else {
-      createMovimientoDto.operacion = TipoOperacion.SALIDA
+      await this.updateStockFromMovement(movimientoActualizado)
     }
 
-    // Validaciones específicas por tipo de movimiento
-    await this.validateMovement(createMovimientoDto)
-
-    // Crear el movimiento
-    const movimiento =
-      await this.movimientosRepository.createMovimiento(createMovimientoDto)
-
-    // Actualizar el stock automáticamente para todos los movimientos
-    await this.updateStockFromMovement(movimiento)
-
-    return movimiento
+    return movimientoActualizado
   }
 
-  private async validateMovement(
-    createMovimientoDto: CreateMovimientoDto,
-  ): Promise<void> {
-    const { tipo, bodegaOrigenId, bodegaDestinoId, productoId, cantidad } =
-      createMovimientoDto
-
-    // Validar que la cantidad sea positiva
-    if (cantidad <= 0) {
-      throw new BadRequestException('La cantidad debe ser mayor a 0')
+  private validateStateTransition(
+    estadoActual: EstadoMovimiento,
+    nuevoEstado: EstadoMovimiento,
+  ): void {
+    const transicionesValidas: Record<EstadoMovimiento, EstadoMovimiento[]> = {
+      [EstadoMovimiento.PENDIENTE]: [
+        EstadoMovimiento.EN_PROCESO,
+        EstadoMovimiento.COMPLETADO,
+        EstadoMovimiento.CANCELADO,
+        EstadoMovimiento.RECHAZADO,
+      ],
+      [EstadoMovimiento.EN_PROCESO]: [
+        EstadoMovimiento.COMPLETADO,
+        EstadoMovimiento.CANCELADO,
+        EstadoMovimiento.EN_REVISION,
+      ],
+      [EstadoMovimiento.EN_REVISION]: [
+        EstadoMovimiento.COMPLETADO,
+        EstadoMovimiento.CANCELADO,
+        EstadoMovimiento.EN_PROCESO,
+      ],
+      [EstadoMovimiento.COMPLETADO]: [], // No se puede cambiar desde completado
+      [EstadoMovimiento.CANCELADO]: [], // No se puede cambiar desde cancelado
+      [EstadoMovimiento.RECHAZADO]: [
+        EstadoMovimiento.PENDIENTE,
+        EstadoMovimiento.CANCELADO,
+      ],
     }
 
-    // Validaciones para transferencias
-    if (tipo === TipoMovimiento.TRANSFERENCIA) {
-      if (!bodegaOrigenId || !bodegaDestinoId) {
-        throw new BadRequestException(
-          'Las transferencias requieren bodega origen y destino',
-        )
-      }
-      if (bodegaOrigenId === bodegaDestinoId) {
-        throw new BadRequestException(
-          'La bodega origen y destino no pueden ser la misma',
-        )
-      }
-    }
-
-    // Validaciones para salidas
-    const salidas = [
-      TipoMovimiento.SALIDA,
-      TipoMovimiento.VENTA,
-      TipoMovimiento.CONSUMO,
-      TipoMovimiento.MERMA,
-    ]
-    if (salidas.includes(tipo as TipoMovimiento)) {
-      if (!bodegaOrigenId) {
-        throw new BadRequestException(
-          'Los movimientos de salida requieren una bodega origen',
-        )
-      }
-      // Verificar que hay stock suficiente
-      const stock = await this.stockRepository.findByProductoAndBodega(
-        productoId,
-        bodegaOrigenId,
+    if (!transicionesValidas[estadoActual].includes(nuevoEstado)) {
+      throw new BadRequestException(
+        `No se puede cambiar el estado de ${estadoActual} a ${nuevoEstado}`,
       )
-      if (!stock) {
-        throw new NotFoundException(
-          `No existe stock para el producto ${productoId} en la bodega ${bodegaOrigenId}`,
-        )
-      }
-      if (stock.stockDisponible < cantidad) {
-        throw new BadRequestException(
-          `Stock insuficiente. Disponible: ${stock.stockDisponible}, Solicitado: ${cantidad}`,
-        )
-      }
-    }
-
-    // Validaciones para entradas
-    const entradas = [
-      TipoMovimiento.ENTRADA,
-      TipoMovimiento.COMPRA,
-      TipoMovimiento.PRODUCCION,
-      TipoMovimiento.DEVOLUCION,
-    ]
-    if (entradas.includes(tipo as TipoMovimiento)) {
-      if (!bodegaDestinoId) {
-        throw new BadRequestException(
-          'Los movimientos de entrada requieren una bodega destino',
-        )
-      }
     }
   }
 
@@ -227,12 +164,55 @@ export class CreateMovimientoAction {
     cantidad: number,
     precioUnitario?: number,
   ): Promise<void> {
-    await this.stockRepository.addOrCreateStock(
+    let stock = await this.stockRepository.findByProductoAndBodega(
       productoId,
       bodegaId,
-      cantidad,
-      precioUnitario,
     )
+
+    if (!stock) {
+      // Crear nuevo stock si no existe
+      stock = await this.stockRepository.createStock({
+        productoId,
+        bodegaId,
+        stockActual: cantidad,
+        stockReservado: 0,
+        stockDisponible: cantidad,
+        stockMinimo: 0,
+        stockMaximo: 0,
+        precioUltimo: precioUnitario,
+        fechaUltimoMovimiento: new Date(),
+        fechaUltimaActualizacion: new Date(),
+      })
+    } else {
+      // Actualizar stock existente
+      const nuevoStockActual = stock.stockActual + cantidad
+      const nuevoStockDisponible = nuevoStockActual - stock.stockReservado
+
+      // Calcular precio promedio ponderado si se proporciona precio
+      let nuevoPrecioPromedio = stock.precioPromedio
+      if (precioUnitario && precioUnitario > 0) {
+        const valorActual = (stock.precioPromedio ?? 0) * stock.stockActual
+        const valorNuevo = precioUnitario * cantidad
+        const stockTotal = nuevoStockActual
+        nuevoPrecioPromedio =
+          stockTotal > 0
+            ? (valorActual + valorNuevo) / stockTotal
+            : precioUnitario
+      }
+
+      await this.stockRepository.updateStockByProductoAndBodega(
+        productoId,
+        bodegaId,
+        {
+          stockActual: nuevoStockActual,
+          stockDisponible: nuevoStockDisponible,
+          precioPromedio: nuevoPrecioPromedio,
+          precioUltimo: precioUnitario || stock.precioUltimo,
+          fechaUltimoMovimiento: new Date(),
+          fechaUltimaActualizacion: new Date(),
+        },
+      )
+    }
   }
 
   private async handleStockExit(

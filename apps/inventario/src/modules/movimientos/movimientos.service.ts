@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { CreateMovimientoAction } from './use-case/create-movimiento.usecase'
 import { GetMovimientoAction } from './use-case/get-movimiento.usecase'
 import { UpdateMovimientoAction } from './use-case/update-movimiento.usecase'
+import { UpdateMovimientoStatusAction } from './use-case/update-movimiento-status.usecase'
 import { DeleteMovimientoAction } from './use-case/delete-movimiento.usecase'
 import { MovimientosRepository } from './repository/movimientos.repository'
 import { CreateMovimientoDto } from './dto/create-movimiento.dto'
@@ -19,6 +20,7 @@ export class MovimientosService {
     private readonly createMovimientoAction: CreateMovimientoAction,
     private readonly getMovimientoAction: GetMovimientoAction,
     private readonly updateMovimientoAction: UpdateMovimientoAction,
+    private readonly updateMovimientoStatusAction: UpdateMovimientoStatusAction,
     private readonly deleteMovimientoAction: DeleteMovimientoAction,
     private readonly movimientosRepository: MovimientosRepository,
   ) {}
@@ -91,6 +93,18 @@ export class MovimientosService {
     updateMovimientoDto: UpdateMovimientoDto,
   ): Promise<Movimiento> {
     return this.updateMovimientoAction.execute(id, updateMovimientoDto)
+  }
+
+  async updateStatus(
+    id: number,
+    nuevoEstado: EstadoMovimiento,
+    observaciones?: string,
+  ): Promise<Movimiento> {
+    return this.updateMovimientoStatusAction.execute(
+      id,
+      nuevoEstado,
+      observaciones,
+    )
   }
 
   async remove(id: number): Promise<void> {
