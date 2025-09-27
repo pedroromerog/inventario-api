@@ -3,9 +3,11 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm'
 import { Secretaria } from './secretaria.entity'
+import { Funcionario } from '../../users/entities/funcionario.entity'
 
 @Entity('dependencias')
 export class Dependencia {
@@ -24,4 +26,7 @@ export class Dependencia {
   @ManyToOne(() => Secretaria, (secretaria) => secretaria.dependencias)
   @JoinColumn()
   secretaria: Secretaria
+
+  @OneToMany(() => Funcionario, (funcionario) => funcionario.dependencia)
+  funcionarios: Funcionario[]
 }

@@ -6,6 +6,7 @@ import {
   OneToMany,
 } from 'typeorm'
 import { Ciudadano } from './ciudadano.entity'
+import { Funcionario } from './funcionario.entity'
 import { Pqr } from '../../pqr/entities/pqr.entity'
 import { Trazabilidad } from '../../pqr/entities/trazabilidad.entity'
 
@@ -46,6 +47,9 @@ export class User {
 
   @OneToOne(() => Ciudadano, (ciudadano) => ciudadano.user)
   ciudadano?: Ciudadano
+
+  @OneToOne(() => Funcionario, (funcionario) => funcionario.user)
+  funcionario?: Funcionario
 
   @OneToMany(() => Pqr, (pqr) => pqr.radicadoPorFuncionario)
   pqrsRadicados: Pqr[]

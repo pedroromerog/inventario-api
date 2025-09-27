@@ -13,6 +13,8 @@ import { CreateUserDto } from './dto/create-user.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
 import { CreateCiudadanoDto } from './dto/create-ciudadano.dto'
 import { UpdateCiudadanoDto } from './dto/update-ciudadano.dto'
+import { CreateFuncionarioDto } from './dto/create-funcionario.dto'
+import { UpdateFuncionarioDto } from './dto/update-funcionario.dto'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { RolesGuard } from '../auth/guards/roles.guard'
 import { Roles } from '../auth/decorators/roles.decorator'
@@ -75,5 +77,39 @@ export class UsersController {
   @Delete('ciudadanos/:id')
   removeCiudadano(@Param('id') id: string) {
     return this.usersService.removeCiudadano(id)
+  }
+
+  // Funcionarios
+  @Post('funcionarios')
+  createFuncionario(@Body() createFuncionarioDto: CreateFuncionarioDto) {
+    return this.usersService.createFuncionario(createFuncionarioDto)
+  }
+
+  @Get('funcionarios')
+  findAllFuncionarios() {
+    return this.usersService.findAllFuncionarios()
+  }
+
+  @Get('funcionarios/:id')
+  findFuncionarioById(@Param('id') id: string) {
+    return this.usersService.findFuncionarioById(id)
+  }
+
+  @Patch('funcionarios/:id')
+  updateFuncionario(
+    @Param('id') id: string,
+    @Body() updateFuncionarioDto: UpdateFuncionarioDto,
+  ) {
+    return this.usersService.updateFuncionario(id, updateFuncionarioDto)
+  }
+
+  @Delete('funcionarios/:id')
+  removeFuncionario(@Param('id') id: string) {
+    return this.usersService.removeFuncionario(id)
+  }
+
+  @Get('funcionarios/dependencia/:dependenciaId')
+  findFuncionariosByDependencia(@Param('dependenciaId') dependenciaId: string) {
+    return this.usersService.findFuncionariosByDependencia(+dependenciaId)
   }
 }

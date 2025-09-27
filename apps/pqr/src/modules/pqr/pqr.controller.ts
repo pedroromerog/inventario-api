@@ -16,6 +16,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { RolesGuard } from '../auth/guards/roles.guard'
 import { Roles } from '../auth/decorators/roles.decorator'
 import { UserRole } from '../users/entities/user.entity'
+import { CurrentUser } from 'apps/inventario/src/modules/auth/decorators/current-user.decorator'
 
 @Controller('pqr')
 export class PqrController {
@@ -36,6 +37,13 @@ export class PqrController {
   )
   findAllPqrs() {
     return this.pqrService.findAllPqrs()
+  }
+
+  @Get('mine')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.CIUDADANO)
+  findAllPqrsMine(@CurrentUser() user: any) {
+    return this.pqrService.findAllPqrsMine(user.id)
   }
 
   @Get(':id')

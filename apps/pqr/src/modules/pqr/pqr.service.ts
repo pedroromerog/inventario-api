@@ -29,6 +29,20 @@ export class PqrService {
     private readonly dependenciaRepository: Repository<Dependencia>,
   ) {}
 
+  findAllPqrsMine(id: string) {
+    return this.pqrRepository.find({
+      where: { creadoPorCiudadano: { id } },
+      relations: [
+        'creadoPorCiudadano',
+        'radicadoPorFuncionario',
+        'secretariaAsignada',
+        'dependenciaAsignada',
+        'funcionarioAsignado',
+        'trazabilidad',
+      ],
+    })
+  }
+
   async createPqr(createPqrDto: CreatePqrDto): Promise<Pqr> {
     // Generar radicado único
     const radicado = await this.generarRadicado()
