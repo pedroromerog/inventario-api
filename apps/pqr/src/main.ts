@@ -15,8 +15,10 @@ async function bootstrap() {
   )
 
   // Habilitar CORS
-  app.enableCors()
+  app.enableCors({
+    origin: '*',
+  })
 
-  await app.listen(3000)
+  await app.listen(process.env.PORT_PQR || 3000)
 }
 bootstrap()
