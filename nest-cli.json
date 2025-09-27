@@ -37,6 +37,15 @@
         "tsConfigPath": "apps/obra/tsconfig.app.json"
       }
     },
+    "pqr": {
+      "type": "application",
+      "root": "apps/pqr",
+      "entryFile": "main",
+      "sourceRoot": "apps/pqr/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/pqr/tsconfig.app.json"
+      }
+    },
     "renova": {
       "type": "application",
       "root": "apps/renova",
