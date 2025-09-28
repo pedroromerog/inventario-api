@@ -264,3 +264,4 @@ const stockTotal = await stockService.getTotalStockByProduct(1)
 3. **Consistencia:** El stock siempre refleja el estado real de los movimientos
 4. **Flexibilidad:** Se pueden manejar diferentes tipos de operaciones (reserva, liberación, consumo)
 5. **Trazabilidad:** Cada cambio de stock está asociado a un movimiento específico
+

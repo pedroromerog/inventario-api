@@ -90,14 +90,18 @@ export class OrganigramaService {
 
   async findAllDependencias(): Promise<Dependencia[]> {
     return this.dependenciaRepository.find({
-      relations: ['secretaria'],
+      relations: {
+        secretaria: true,
+      },
     })
   }
 
   async findDependenciaById(id: number): Promise<Dependencia> {
     const dependencia = await this.dependenciaRepository.findOne({
       where: { id },
-      relations: ['secretaria'],
+      relations: {
+        secretaria: true,
+      },
     })
 
     if (!dependencia) {

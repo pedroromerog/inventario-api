@@ -1,21 +1,21 @@
 import {
+  ConflictException,
   Injectable,
   NotFoundException,
-  ConflictException,
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
 import * as bcrypt from 'bcrypt'
-import { User } from './entities/user.entity'
+import { Repository } from 'typeorm'
+import { Dependencia } from '../organigrama/entities/dependencia.entity'
+import { CreateCiudadanoDto } from './dto/create-ciudadano.dto'
+import { CreateFuncionarioDto } from './dto/create-funcionario.dto'
+import { CreateUserDto } from './dto/create-user.dto'
+import { UpdateCiudadanoDto } from './dto/update-ciudadano.dto'
+import { UpdateFuncionarioDto } from './dto/update-funcionario.dto'
+import { UpdateUserDto } from './dto/update-user.dto'
 import { Ciudadano } from './entities/ciudadano.entity'
 import { Funcionario } from './entities/funcionario.entity'
-import { Dependencia } from '../organigrama/entities/dependencia.entity'
-import { CreateUserDto } from './dto/create-user.dto'
-import { UpdateUserDto } from './dto/update-user.dto'
-import { CreateCiudadanoDto } from './dto/create-ciudadano.dto'
-import { UpdateCiudadanoDto } from './dto/update-ciudadano.dto'
-import { CreateFuncionarioDto } from './dto/create-funcionario.dto'
-import { UpdateFuncionarioDto } from './dto/update-funcionario.dto'
+import { User } from './entities/user.entity'
 
 @Injectable()
 export class UsersService {
@@ -49,16 +49,39 @@ export class UsersService {
     return this.userRepository.save(user)
   }
 
+  setRefreshToken(userId: any, refreshToken: string) {
+    return this.userRepository.update(userId, { refreshToken })
+  }
+
   async findAllUsers(): Promise<User[]> {
     return this.userRepository.find({
-      relations: ['ciudadano'],
+      relations: {
+        ciudadano: true,
+        funcionario: true,
+      },
     })
+  }
+
+  async findPaginatedUsers(params: any) {
+    const [data, total] = await this.userRepository.findAndCount({
+      relations: {
+        ciudadano: true,
+        funcionario: true,
+      },
+    })
+    return {
+      data,
+      total,
+    }
   }
 
   async findUserById(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ['ciudadano'],
+      relations: {
+        ciudadano: true,
+        funcionario: true,
+      },
     })
 
     if (!user) {

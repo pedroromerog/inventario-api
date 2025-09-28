@@ -30,6 +30,11 @@ export class User {
   password: string
 
   @Column({
+    nullable: true,
+  })
+  refreshToken: string
+
+  @Column({
     type: 'enum',
     enum: UserRole,
     default: UserRole.CIUDADANO,

@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsUUID,
   IsDateString,
+  IsBoolean,
 } from 'class-validator'
 import { TipoPqr, CanalRecepcion } from '../entities/pqr.entity'
 
@@ -20,8 +21,22 @@ export class CreatePqrDto {
   @IsEnum(CanalRecepcion)
   canalRecepcion: CanalRecepcion
 
+  @IsOptional()
+  observaciones: string
+
+  @IsOptional()
+  @IsBoolean()
+  isAnonimo: boolean
+
+  @IsOptional()
+  numeroContacto: string
+
+  @IsOptional()
+  emailContacto: string
+
+  @IsOptional()
   @IsUUID()
-  creadoPorCiudadanoId: string
+  creadoPorCiudadanoId?: string
 
   @IsOptional()
   @IsUUID()

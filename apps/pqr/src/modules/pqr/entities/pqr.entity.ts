@@ -1,15 +1,15 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
+  Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
-  JoinColumn,
+  PrimaryGeneratedColumn,
 } from 'typeorm'
+import { Dependencia } from '../../organigrama/entities/dependencia.entity'
+import { Secretaria } from '../../organigrama/entities/secretaria.entity'
 import { Ciudadano } from '../../users/entities/ciudadano.entity'
 import { User } from '../../users/entities/user.entity'
-import { Secretaria } from '../../organigrama/entities/secretaria.entity'
-import { Dependencia } from '../../organigrama/entities/dependencia.entity'
 import { Trazabilidad } from './trazabilidad.entity'
 
 export enum TipoPqr {
@@ -47,6 +47,11 @@ export class Pqr {
   @Column()
   asunto: string
 
+  @Column({
+    default: false,
+  })
+  isAnonimo: boolean
+
   @Column('text')
   descripcion: string
 
@@ -55,6 +60,12 @@ export class Pqr {
     enum: TipoPqr,
   })
   tipo: TipoPqr
+
+  @Column({ nullable: true })
+  creadoPorCiudadanoId: string
+
+  @Column({ nullable: true })
+  radicadoPorFuncionarioId: string
 
   @Column({
     type: 'enum',

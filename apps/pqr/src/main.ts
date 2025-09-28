@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core'
 import { ValidationPipe } from '@nestjs/common'
 import { AppModule } from './app.module'
+import { Reflector } from '@nestjs/core'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
+  const reflector = app.get(Reflector)
 
   // Configurar ValidationPipe global
   app.useGlobalPipes(

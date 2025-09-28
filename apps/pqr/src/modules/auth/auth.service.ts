@@ -8,6 +8,7 @@ import * as bcrypt from 'bcrypt'
 import { UsersService } from '../users/users.service'
 import { LoginDto } from './dto/login.dto'
 import { RegisterDto } from './dto/register.dto'
+import { RefreshDto } from './dto/refresh.dto'
 import { UserRole } from '../users/entities/user.entity'
 
 @Injectable()
@@ -17,26 +18,29 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async login(loginDto: LoginDto) {
-    const user = await this.usersService.findUserByEmail(loginDto.email)
+  async validateUser(username: string, pass: string): Promise<any> {
+    const user = await this.usersService.findUserByEmail(username)
 
     if (!user) {
-      throw new UnauthorizedException('Credenciales inválidas')
+      return null
     }
 
-    const isPasswordValid = await bcrypt.compare(
-      loginDto.password,
-      user.password,
-    )
+    const isPasswordValid = await bcrypt.compare(pass, user.password)
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Credenciales inválidas')
+      return null
     }
+    return user
+  }
 
+  async login(user: any) {
     const payload = { email: user.email, sub: user.id, rol: user.rol }
-
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' })
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10)
+    await this.usersService.setRefreshToken(user.id, hashedRefreshToken)
     return {
       access_token: this.jwtService.sign(payload),
+      refreshToken,
       user: {
         id: user.id,
         email: user.email,
@@ -84,5 +88,20 @@ export class AuthService {
       }
       throw new ConflictException('Error al registrar el usuario')
     }
+  }
+
+  async refresh(refreshDto: RefreshDto) {
+    const userId = this.jwtService.decode(refreshDto.refreshToken).sub
+    const user = await this.usersService.findUserById(userId)
+
+    // Compara el refresh token recibido con el guardado en la BD
+    const isValid = await bcrypt.compare(
+      refreshDto.refreshToken,
+      user.refreshToken,
+    )
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid refresh token')
+    }
+    return this.login(user)
   }
 }

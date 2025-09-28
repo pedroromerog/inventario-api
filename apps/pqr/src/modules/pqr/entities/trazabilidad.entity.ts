@@ -32,6 +32,11 @@ export class Trazabilidad {
   })
   tipoActuacion: TipoActuacion
 
+  @Column({
+    nullable: true,
+  })
+  usuarioQueActuaId: string | null
+
   @Column('text')
   descripcion: string
 

@@ -1,27 +1,28 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
   UseGuards,
 } from '@nestjs/common'
-import { UsersService } from './users.service'
-import { CreateUserDto } from './dto/create-user.dto'
-import { UpdateUserDto } from './dto/update-user.dto'
-import { CreateCiudadanoDto } from './dto/create-ciudadano.dto'
-import { UpdateCiudadanoDto } from './dto/update-ciudadano.dto'
-import { CreateFuncionarioDto } from './dto/create-funcionario.dto'
-import { UpdateFuncionarioDto } from './dto/update-funcionario.dto'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { RolesGuard } from '../auth/guards/roles.guard'
 import { Roles } from '../auth/decorators/roles.decorator'
+import { RolesGuard } from '../auth/guards/roles.guard'
+import { CreateCiudadanoDto } from './dto/create-ciudadano.dto'
+import { CreateFuncionarioDto } from './dto/create-funcionario.dto'
+import { CreateUserDto } from './dto/create-user.dto'
+import { UpdateCiudadanoDto } from './dto/update-ciudadano.dto'
+import { UpdateFuncionarioDto } from './dto/update-funcionario.dto'
+import { UpdateUserDto } from './dto/update-user.dto'
 import { UserRole } from './entities/user.entity'
+import { UsersService } from './users.service'
+import { FindParams } from '../../shared/interfaces/find-params.interface'
 
 @Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(RolesGuard)
 @Roles(UserRole.ADMINISTRADOR)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -34,6 +35,12 @@ export class UsersController {
   @Get()
   findAllUsers() {
     return this.usersService.findAllUsers()
+  }
+
+  @Get('paginated')
+  findAllUsersPaginated(@Query() params: any /*FindParams*/) {
+    console.log('🚀>>> ~ params:', params)
+    return this.usersService.findPaginatedUsers(params)
   }
 
   @Get(':id')
@@ -90,6 +97,11 @@ export class UsersController {
     return this.usersService.findAllFuncionarios()
   }
 
+  @Get('funcionarios/dependencia/:dependenciaId')
+  findFuncionariosByDependencia(@Param('dependenciaId') dependenciaId: string) {
+    return this.usersService.findFuncionariosByDependencia(+dependenciaId)
+  }
+
   @Get('funcionarios/:id')
   findFuncionarioById(@Param('id') id: string) {
     return this.usersService.findFuncionarioById(id)
@@ -106,10 +118,5 @@ export class UsersController {
   @Delete('funcionarios/:id')
   removeFuncionario(@Param('id') id: string) {
     return this.usersService.removeFuncionario(id)
-  }
-
-  @Get('funcionarios/dependencia/:dependenciaId')
-  findFuncionariosByDependencia(@Param('dependenciaId') dependenciaId: string) {
-    return this.usersService.findFuncionariosByDependencia(+dependenciaId)
   }
 }

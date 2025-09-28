@@ -1,16 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Pqr } from './entities/pqr.entity'
-import { Trazabilidad } from './entities/trazabilidad.entity'
-import { Ciudadano } from '../users/entities/ciudadano.entity'
-import { User } from '../users/entities/user.entity'
-import { Secretaria } from '../organigrama/entities/secretaria.entity'
+import { UserLogin } from '../../shared/interfaces/current-user.interface'
 import { Dependencia } from '../organigrama/entities/dependencia.entity'
+import { Secretaria } from '../organigrama/entities/secretaria.entity'
+import { Ciudadano } from '../users/entities/ciudadano.entity'
+import { User, UserRole } from '../users/entities/user.entity'
 import { CreatePqrDto } from './dto/create-pqr.dto'
-import { UpdatePqrDto } from './dto/update-pqr.dto'
 import { CreateTrazabilidadDto } from './dto/create-trazabilidad.dto'
-import { TipoActuacion } from './entities/trazabilidad.entity'
+import { UpdatePqrDto } from './dto/update-pqr.dto'
+import { Pqr } from './entities/pqr.entity'
+import { TipoActuacion, Trazabilidad } from './entities/trazabilidad.entity'
+import { Funcionario } from '../users/entities/funcionario.entity'
 
 @Injectable()
 export class PqrService {
@@ -29,8 +30,8 @@ export class PqrService {
     private readonly dependenciaRepository: Repository<Dependencia>,
   ) {}
 
-  findAllPqrsMine(id: string) {
-    return this.pqrRepository.find({
+  async findAllPqrsMine(id: string) {
+    const [data, total] = await this.pqrRepository.findAndCount({
       where: { creadoPorCiudadano: { id } },
       relations: [
         'creadoPorCiudadano',
@@ -41,32 +42,61 @@ export class PqrService {
         'trazabilidad',
       ],
     })
+    return {
+      data,
+      total,
+    }
   }
 
-  async createPqr(createPqrDto: CreatePqrDto): Promise<Pqr> {
+  /**
+   * Revisar
+   * @param createPqrDto
+   * @returns
+   */
+  async createPqr(createPqrDto: CreatePqrDto, user: UserLogin): Promise<Pqr> {
+    console.log('🚀>>> ~ user:', user)
+    console.log('🚀>>> ~ createPqrDto:', createPqrDto)
+
+    if (!createPqrDto.isAnonimo) {
+      const usr = await this.userRepository.findOne({
+        relations: {
+          ciudadano: true,
+          funcionario: true,
+        },
+        where: {
+          id: user.id,
+        },
+      })
+      if (usr?.rol === UserRole.CIUDADANO) {
+        createPqrDto.creadoPorCiudadanoId = usr?.ciudadano?.id
+      } else {
+        createPqrDto.radicadoPorFuncionarioId = usr?.funcionario?.id
+      }
+    }
     // Generar radicado único
     const radicado = await this.generarRadicado()
 
     // Calcular fecha de vencimiento
     const fechaVencimiento = this.calcularFechaVencimiento(createPqrDto.tipo)
 
-    // Obtener ciudadano
-    const ciudadano = await this.ciudadanoRepository.findOne({
-      where: { id: createPqrDto.creadoPorCiudadanoId },
-    })
+    // // Obtener ciudadano
+    // const ciudadano = await this.ciudadanoRepository.findOne({
+    //   where: { id: createPqrDto.creadoPorCiudadanoId },
+    // })
+    // console.log('🚀>>> ~ ciudadano:', ciudadano)
 
-    if (!ciudadano) {
-      throw new NotFoundException('Ciudadano no encontrado')
-    }
+    // if (!ciudadano) {
+    //   throw new NotFoundException('Ciudadano no encontrado')
+    // }
 
     // Obtener funcionario si se proporciona
-    let radicadoPorFuncionario: User | undefined = undefined
-    if (createPqrDto.radicadoPorFuncionarioId) {
-      const funcionario = await this.userRepository.findOne({
-        where: { id: createPqrDto.radicadoPorFuncionarioId },
-      })
-      radicadoPorFuncionario = funcionario || undefined
-    }
+    // let radicadoPorFuncionario: User | undefined = undefined
+    // if (createPqrDto.radicadoPorFuncionarioId) {
+    //   const funcionario = await this.userRepository.findOne({
+    //     where: { id: createPqrDto.radicadoPorFuncionarioId },
+    //   })
+    //   radicadoPorFuncionario = funcionario || undefined
+    // }
 
     // Crear PQR
     const pqr: Pqr = this.pqrRepository.create({
@@ -75,14 +105,14 @@ export class PqrService {
       fechaVencimiento: createPqrDto.fechaVencimiento
         ? new Date(createPqrDto.fechaVencimiento)
         : fechaVencimiento,
-      creadoPorCiudadano: ciudadano,
-      radicadoPorFuncionario,
+      // creadoPorCiudadano: ciudadano,
+      // radicadoPorFuncionario,
     })
 
     const savedPqr = await this.pqrRepository.save(pqr)
 
     // Crear trazabilidad inicial
-    await this.crearTrazabilidadInicial(savedPqr, radicadoPorFuncionario)
+    await this.crearTrazabilidadInicial(savedPqr)
 
     return savedPqr
   }
@@ -236,14 +266,14 @@ export class PqrService {
     return fechaVencimiento
   }
 
-  private async crearTrazabilidadInicial(
-    pqr: Pqr,
-    funcionario?: User,
-  ): Promise<void> {
+  private async crearTrazabilidadInicial(pqr: Pqr): Promise<void> {
+    const descripcion = `PQR ${pqr.isAnonimo ? 'ANONIMO ' : ''}creado con radicado ${pqr.radicado}`
     const trazabilidad = this.trazabilidadRepository.create({
       tipoActuacion: TipoActuacion.CREACION,
-      descripcion: `PQR creado con radicado ${pqr.radicado}`,
-      usuarioQueActua: funcionario || pqr.creadoPorCiudadano.user,
+      descripcion,
+      usuarioQueActuaId: pqr.isAnonimo
+        ? null
+        : pqr.radicadoPorFuncionarioId || pqr.creadoPorCiudadanoId,
       pqr,
     })
 

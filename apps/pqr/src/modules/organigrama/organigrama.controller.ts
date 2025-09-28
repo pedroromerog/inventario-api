@@ -9,7 +9,6 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { Roles } from '../auth/decorators/roles.decorator'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { RolesGuard } from '../auth/guards/roles.guard'
 import { UserRole } from '../users/entities/user.entity'
 import { CreateDependenciaDto } from './dto/create-dependencia.dto'
@@ -18,8 +17,8 @@ import { UpdateDependenciaDto } from './dto/update-dependencia.dto'
 import { UpdateSecretariaDto } from './dto/update-secretaria.dto'
 import { OrganigramaService } from './organigrama.service'
 
-@Controller('organigrama')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller()
+@UseGuards(RolesGuard)
 @Roles(UserRole.ADMINISTRADOR)
 export class OrganigramaController {
   constructor(private readonly organigramaService: OrganigramaService) {}
