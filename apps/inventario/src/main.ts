@@ -20,15 +20,7 @@ async function bootstrap() {
   )
 
   // Configurar CORS para cookies
-  const corsOrigins =
-    process.env.NODE_ENV === 'production'
-      ? [process.env.CORS_ORIGIN || 'https://tudominio.com']
-      : [
-          'http://localhost:4200',
-          'http://localhost:4201',
-          'http://localhost:4203',
-        ]
-
+  const corsOrigins = '*'
   app.enableCors({
     origin: corsOrigins,
     credentials: true, // Importante para cookies
